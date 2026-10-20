@@ -79,6 +79,16 @@ def evaluate_similarity(df_res, n_elements):
 
     return df_u, df_u_bar, best_ranking_code
 
+def display_similarity(df_u_bar):
+    data_2014 = {"R1": 0.967, "R2": 0.966, "R6": 0.965, "R5": 0.957}
+    data_2023 = df_u_bar.set_index("Ranking")["u_bar_p"].to_dict()
+
+    df_similarity = pd.DataFrame([data_2014, data_2023], index=["2014", "2023"])
+    df_similarity.index.name = "Lata"
+
+    df_similarity = df_similarity[["R1", "R2", "R6", "R5"]]
+    return df_similarity.round(3)
+
 def assign_classes(series):
     m = series.mean()
     s = series.std(ddof=1)
