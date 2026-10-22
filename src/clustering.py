@@ -17,7 +17,7 @@ def prepare_clustering_data(df, z_std):
 def hierarchical_clustering(x):
     return linkage(x, method="ward", metric="euclidean")
 
-def select_k_hierarchical(z, x, k_range=range(2, 9)):
+def plot_k_hierarchical(z, x, k_range=range(2, 9)):
     rows = []
     for k in k_range:
         labels = cut_tree(z, n_clusters=[int(k)]).ravel()
@@ -98,46 +98,35 @@ def plot_cluster_indices(df_k):
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
     for ax, (col, subtitle, color, direction) in zip(axes, specs):
         ax.plot(df_k["k"], df_k[col], "o-", color=color, markersize=7)
-
-        if direction == "max":
-            best_k = int(df_k.loc[df_k[col].idxmax(), "k"])
-        else:
-            best_k = int(df_k.loc[df_k[col].idxmin(), "k"])
-        best_val = float(df_k.loc[df_k["k"] == best_k, col].iloc[0])
-
-        ax.axvline(best_k, color="gray", linestyle="--", alpha=0.5)
-        ax.scatter([best_k], [best_val], s=200, facecolor="none",
-                   edgecolor="red", linewidth=2, zorder=5)
-        ax.annotate(f"k = {best_k}", (best_k, best_val),
-                    xytext=(8, 8), textcoords="offset points", fontsize=10)
-
         ax.set_xlabel("Liczba skupień (k)")
         ax.set_ylabel(col)
         ax.set_title(subtitle)
         ax.grid(alpha=0.3)
 
-    plt.suptitle("Wybór liczby skupień — indeksy jakości klasyfikacji", fontsize=13, y=1.02)
+    plt.suptitle("Krzywe indeksów jakości klasyfikacji", fontsize=13, y=1.02)
     plt.tight_layout()
     plt.show()
-
-
-def summarize_best_k(df_k):
-    votes = {
-        "G1": int(df_k.loc[df_k["G1"].idxmax(), "k"]),
-        "S":  int(df_k.loc[df_k["S"].idxmax(),  "k"]),
-        "DB": int(df_k.loc[df_k["DB"].idxmin(), "k"]),
-    }
-    df_votes = pd.DataFrame({"indeks": list(votes),
-                             "wskazane_k": list(votes.values())})
-    majority_k = int(df_votes["wskazane_k"].mode().iloc[0])
-    return df_votes, majority_k
 
 def profile_groups(df, labels, variables):
     df_p = df[["Województwo"] + variables].copy()
     df_p["Klaster"] = labels
-    return (df_p.groupby("Klaster")[variables]
-                 .agg(["mean", "std", "min", "max", "count"])
-                 .round(2))
+
+    means = df_p.groupby("Klaster")[variables].mean().round(2)
+    stds = df_p.groupby("Klaster")[variables].std().round(2).fillna(0)
+
+    result = pd.DataFrame(index=means.index, columns=variables)
+    for var in variables:
+        result[var] = means[var].astype(str) + " (" + stds[var].astype(str) + ")"
+
+    overall_mean = df[variables].mean().round(2)
+    overall_std = df[variables].std().round(2).fillna(0)
+    result.loc["Ogółem"] = overall_mean.astype(str) + " (" + overall_std.astype(str) + ")"
+
+    result = result.T
+    result.index.name = "Zmienna"
+    result.columns.name = "Klaster"
+
+    return result
 
 
 def list_group_members(names, labels):
