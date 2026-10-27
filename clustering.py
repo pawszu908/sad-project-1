@@ -63,32 +63,6 @@ def plot_merge_heights(z):
 
     return pd.DataFrame({"krok": steps, "odleglosc": np.round(heights, 3)})
 
-from sklearn.decomposition import PCA
-
-def plot_pca_clusters(x, labels, names):
-    pca = PCA(n_components=2)
-    y = pca.fit_transform(x)
-    ev = pca.explained_variance_ratio_ * 100
-
-    plt.figure(figsize=(10, 7))
-    palette = sns.color_palette("tab10", n_colors=len(np.unique(labels)))
-    for i, g in enumerate(sorted(np.unique(labels))):
-        m = labels == g
-        plt.scatter(y[m, 0], y[m, 1], s=130, color=palette[i],
-                    label=f"Klaster {g}", edgecolor="black")
-        for j in np.where(m)[0]:
-            plt.annotate(names[j], (y[j, 0], y[j, 1]),
-                         fontsize=8, xytext=(5, 5), textcoords="offset points")
-    plt.xlabel(f"PC1 ({ev[0]:.1f}%)")
-    plt.ylabel(f"PC2 ({ev[1]:.1f}%)")
-    plt.title("Wizualizacja skupień w przestrzeni PCA")
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    return pca
-
 def plot_cluster_indices(df_k):
     specs = [
         ("G1", "Calinski-Harabasz (max)", "seagreen",   "max"),
