@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.cluster.hierarchy import linkage, dendrogram, cut_tree
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
+from sklearn.cluster import KMeans
 
 def prepare_clustering_data(df, z_std):
     x = z_std.values.astype(float)
@@ -132,3 +133,51 @@ def profile_groups(df, labels, variables):
 def list_group_members(names, labels):
     return {int(g): sorted(names[labels == g].tolist())
             for g in np.unique(labels)}
+
+
+def kmeans_indices(x, k_range=range(2, 9)):
+    rows = []
+    for k in k_range:
+        kmeans = KMeans(n_clusters=k, n_init=100, random_state=42)
+        labels = kmeans.fit_predict(x)
+        n_lab = len(np.unique(labels))
+        if not (1 < n_lab < len(x)):
+            rows.append({"k": int(k), "G1": np.nan, "S": np.nan, "DB": np.nan, "inertia": np.nan})
+            continue
+        rows.append({
+            "k": int(k),
+            "G1": round(float(calinski_harabasz_score(x, labels)), 3),
+            "S":  round(float(silhouette_score(x, labels)), 3),
+            "DB": round(float(davies_bouldin_score(x, labels)), 3),
+            "inertia": round(float(kmeans.inertia_), 3)
+        })
+    return pd.DataFrame(rows)
+
+
+def plot_elbow(df_k):
+    plt.figure(figsize=(10, 5))
+    plt.plot(df_k["k"], df_k["inertia"], "o-", color="navy", markersize=7)
+    plt.xlabel("Liczba skupień (k)")
+    plt.ylabel("Inercja (suma kwadratów odległości do centroidów)")
+    plt.title("Wykres inercji względem liczby skupień (metoda łokcia)")
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+def plot_indices_comparison(df_a, df_b, label_a="Ward", label_b="k-means"):
+    specs = [("G1", "Calinski-Harabasz (max)"),
+             ("S", "Silhouette (max)"),
+             ("DB", "Davies-Bouldin (min)")]
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
+    for ax, (col, title) in zip(axes, specs):
+        ax.plot(df_a["k"], df_a[col], "o-", label=label_a, markersize=7)
+        ax.plot(df_b["k"], df_b[col], "s--", label=label_b, markersize=6)
+        ax.set_title(title)
+        ax.set_xlabel("Liczba skupień (k)")
+        ax.set_ylabel(col)
+        ax.grid(alpha=0.3)
+        ax.legend()
+    plt.suptitle("Porównanie wskaźników jakości: Ward vs k-means", fontsize=13, y=1.02)
+    plt.tight_layout()
+    plt.show()
+
