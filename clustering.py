@@ -34,15 +34,10 @@ def plot_k_hierarchical(z, x, k_range=range(2, 9)):
         })
     return pd.DataFrame(rows)
 
-def plot_dendrogram(z, names, k=None):
-    color_threshold = None
-    if k is not None and 1 < k < len(names):
-        color_threshold = (z[-k, 2] + z[-k + 1, 2]) / 2.0
-
+def plot_dendrogram(z, names):
     plt.figure(figsize=(11, 5.5))
-    dendrogram(z, labels=names, leaf_rotation=90, leaf_font_size=9,
-               color_threshold=color_threshold)
-    plt.title("Dendrogram — grupowanie hierarchiczne (Ward)")
+    dendrogram(z, labels=names, leaf_rotation=90, leaf_font_size=9, color_threshold=None)
+    plt.title("Dendrogram - grupowanie hierarchiczne (Ward)")
     plt.xlabel("Województwo")
     plt.ylabel("Odległość wiązania (Ward)")
     plt.tight_layout()
